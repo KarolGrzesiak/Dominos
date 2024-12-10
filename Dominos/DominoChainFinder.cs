@@ -1,68 +1,67 @@
 namespace Dominos;
 
-internal static class DominoChainFinder
+public static class DominoChainFinder
 {
     public static IReadOnlyCollection<Domino>? FindCircularChain(IReadOnlyCollection<Domino> dominos)
     {
-        if (dominos.Count == 0 || dominos == null) return null;
+        if (dominos.Count == 0) return null;
 
-        foreach (var startDomino in dominos)
+        var dominoList = dominos.ToList();
+        for (var i = 0; i < dominoList.Count; i++)
         {
+            var startDomino = dominoList[i];
             foreach (var initialDomino in new[] { startDomino, startDomino.Flip() })
             {
-                var remainingDominos = new List<Domino>(dominos);
-                remainingDominos.Remove(startDomino);
+                Swap(dominoList, 0, i);
 
-                var chain = TryCreateChain(initialDomino, remainingDominos);
-                if (chain != null)
+                if (TryCreateChain(initialDomino, dominoList, 1, out var chain))
                 {
-                    chain.Insert(0, initialDomino);
                     if (chain.First().Left == chain.Last().Right)
                         return chain;
                 }
+
+                Swap(dominoList, 0, i);
             }
         }
 
         return null;
     }
 
-    private static List<Domino>? TryCreateChain(Domino current, List<Domino> remainingDominos)
+    private static bool TryCreateChain(Domino current, List<Domino> dominos, int depth, out List<Domino> chain)
     {
-        if (remainingDominos.Count == 0)
-            return [];
-
-        for (var i = 0; i < remainingDominos.Count; i++)
+        if (depth == dominos.Count)
         {
-            var nextDomino = remainingDominos[i];
+            chain = new List<Domino> { current };
+            return true;
+        }
 
-            if (current.Right == nextDomino.Left)
+        for (var i = depth; i < dominos.Count; i++)
+        {
+            var nextDomino = dominos[i];
+            foreach (var candidate in new[] { nextDomino, nextDomino.Flip() })
             {
-                var newRemainingDominos = new List<Domino>(remainingDominos);
-                newRemainingDominos.RemoveAt(i);
-
-                var subChain = TryCreateChain(nextDomino, newRemainingDominos);
-                if (subChain != null)
+                if (current.Right == candidate.Left)
                 {
-                    subChain.Insert(0, nextDomino);
-                    return subChain;
-                }
-            }
+                    Swap(dominos, depth, i);
 
-            var flippedNextDomino = nextDomino.Flip();
-            if (current.Right == flippedNextDomino.Left)
-            {
-                var newRemainingDominos = new List<Domino>(remainingDominos);
-                newRemainingDominos.RemoveAt(i);
+                    if (TryCreateChain(candidate, dominos, depth + 1, out chain))
+                    {
+                        chain.Insert(0, current);
+                        return true;
+                    }
 
-                var subChain = TryCreateChain(flippedNextDomino, newRemainingDominos);
-                if (subChain != null)
-                {
-                    subChain.Insert(0, flippedNextDomino);
-                    return subChain;
+                    Swap(dominos, depth, i);
                 }
             }
         }
 
-        return null;
+        chain = null;
+        return false;
+    }
+
+    private static void Swap(List<Domino> list, int i, int j)
+    {
+        if (i == j) return;
+        (list[i], list[j]) = (list[j], list[i]);
     }
 }
