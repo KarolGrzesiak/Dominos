@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Dominos;
 
 public static class DominoChainFinder
@@ -27,11 +29,12 @@ public static class DominoChainFinder
         return null;
     }
 
-    private static bool TryCreateChain(Domino current, List<Domino> dominos, int depth, out List<Domino> chain)
+    private static bool TryCreateChain(Domino current, List<Domino> dominos, int depth,
+        [NotNullWhen(true)] out List<Domino>? chain)
     {
         if (depth == dominos.Count)
         {
-            chain = new List<Domino> { current };
+            chain = [current];
             return true;
         }
 
